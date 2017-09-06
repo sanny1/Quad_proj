@@ -64,6 +64,7 @@ void MPU9250::initialize() {
     setClockSource(MPU9250_CLOCK_PLL_XGYRO);
     setFullScaleGyroRange(MPU9250_GYRO_FS_250);
     setFullScaleAccelRange(MPU9250_ACCEL_FS_2);
+    setDLPFMode(MPU9250_DLPF_BW_5);
     setSleepEnabled(false); // thanks to Jack Elston for pointing this one out!
 }
 
@@ -327,6 +328,7 @@ uint8_t MPU9250::getFullScaleAccelRange() {
  */
 void MPU9250::setFullScaleAccelRange(uint8_t range) {
     I2Cdev::writeBits(devAddr, MPU9250_RA_ACCEL_CONFIG, MPU9250_ACONFIG_AFS_SEL_BIT, MPU9250_ACONFIG_AFS_SEL_LENGTH, range);
+    I2Cdev::writeBits(devAddr,MPU9250_RA_FF_THR,MPU9250_CFG_DLPF_CFG_BIT,MPU9250_CFG_DLPF_CFG_LENGTH,0x06);
 }
 /** Get the high-pass filter configuration.
  * The DHPF is a filter module in the path leading to motion detectors (Free
@@ -862,7 +864,7 @@ void MPU9250::setMasterClockSpeed(uint8_t speed) {
  * operation, and if it is cleared, then it's a write operation. The remaining
  * bits (6-0) are the 7-bit device address of the slave device.
  *
- * In read mode, the result of the read is placed in the lowest available 
+ * In read mode, the result of the read is placed in the lowest available
  * EXT_SENS_DATA register. For further information regarding the allocation of
  * read results, please refer to the EXT_SENS_DATA register description
  * (Registers 73 - 96).
@@ -1716,10 +1718,10 @@ bool MPU9250::getIntDataReadyStatus() {
  * @see MPU9250_RA_ACCEL_XOUT_H
  */
 void MPU9250::getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* mx, int16_t* my, int16_t* mz) {
-    
+
 	//get accel and gyro
 	getMotion6(ax, ay, az, gx, gy, gz);
-	
+
 	//read mag
 	I2Cdev::writeByte(devAddr, MPU9250_RA_INT_PIN_CFG, 0x02); //set i2c bypass enable pin to true to access magnetometer
 	delay(10);
@@ -1728,7 +1730,7 @@ void MPU9250::getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int
 	I2Cdev::readBytes(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_XOUT_L, 6, buffer);
 	*mx = (((int16_t)buffer[1]) << 8) | buffer[0];
     *my = (((int16_t)buffer[3]) << 8) | buffer[2];
-    *mz = (((int16_t)buffer[5]) << 8) | buffer[4];		
+    *mz = (((int16_t)buffer[5]) << 8) | buffer[4];
 }
 /** Get raw 6-axis motion sensor readings (accel/gyro).
  * Retrieves all currently available motion sensor values.
@@ -2959,7 +2961,7 @@ void MPU9250::readMemoryBlock(uint8_t *data, uint16_t dataSize, uint8_t bank, ui
 
         // read the chunk of data as specified
         I2Cdev::readBytes(devAddr, MPU9250_RA_MEM_R_W, chunkSize, data + i);
-        
+
         // increase byte index by [chunkSize]
         i += chunkSize;
 
@@ -2993,7 +2995,7 @@ bool MPU9250::writeMemoryBlock(const uint8_t *data, uint16_t dataSize, uint8_t b
 
         // make sure this chunk doesn't go past the bank boundary (256 bytes)
         if (chunkSize > 256 - address) chunkSize = 256 - address;
-        
+
         if (useProgMem) {
             // write the chunk of data as specified
             for (j = 0; j < chunkSize; j++) progBuffer[j] = pgm_read_byte(data + i + j);
@@ -3107,7 +3109,7 @@ bool MPU9250::writeDMPConfigurationSet(const uint8_t *data, uint16_t dataSize, b
             Serial.println(" found...");*/
             if (special == 0x01) {
                 // enable DMP-related interrupts
-                
+
                 //setIntZeroMotionEnabled(true);
                 //setIntFIFOBufferOverflowEnabled(true);
                 //setIntDMPEnabled(true);
@@ -3119,7 +3121,7 @@ bool MPU9250::writeDMPConfigurationSet(const uint8_t *data, uint16_t dataSize, b
                 success = false;
             }
         }
-        
+
         if (!success) {
             if (useProgMem) free(progBuffer);
             return false; // uh oh
