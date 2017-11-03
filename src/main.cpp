@@ -16,27 +16,27 @@ MPU9250 accelgyro;// calling from MPU9250 to initialise
 int16_t ax,ay,az,gx,gy,gz,mx,my,mz = 0;
 
 // first for offset second and third are variable that hold gyro and accel value
-volatile float G_cal_x, G_cal_y, G_cal_z = 0;
-volatile float Gxyz[3] = {0,0,0};
-volatile float Axyz[3] = {0,0,0};
+float G_cal_x, G_cal_y, G_cal_z = 0;
+float Gxyz[3] = {0,0,0};
+float Axyz[3] = {0,0,0};
 
 // converting into euler angles
-volatile float Roll_gyro = 0, Pitch_gyro = 0;
-volatile float Roll_accel = 0, Pitch_accel = 0;
-volatile float Roll_output = 0, Pitch_output = 0;
+float Roll_gyro = 0, Pitch_gyro = 0;
+float Roll_accel = 0, Pitch_accel = 0;
+float Roll_output = 0, Pitch_output = 0;
 
 //pid calculation values
-volatile float pid_error_temp = 0, pid_i_term_roll = 0, pid_roll_output = 0;
-volatile float setpoint_roll = 0, last_er_tmp_roll = 0;
-volatile float setpoint_pitch = 0, pid_i_term_pitch = 0;
-volatile float Ki_roll = 0.00005, Kp_roll = 0.17, Kd_roll = 1.7;
-volatile float pid_pitch_output = 0, last_er_tmp_pitch = 0;
+float pid_error_temp = 0, pid_i_term_roll = 0, pid_roll_output = 0;
+float setpoint_roll = 0, last_er_tmp_roll = 0;
+float setpoint_pitch = 0, pid_i_term_pitch = 0;
+float Ki_roll = 0.00005, Kp_roll = 0.17, Kd_roll = 1.7;
+float pid_pitch_output = 0, last_er_tmp_pitch = 0;
 
 //support for the calculation
-volatile float dt = 0, last_tm = 0;
-volatile int value = 0;
-volatile float pid_max_roll = 300;
-volatile float loop_timer = 0;
+float dt = 0, last_tm = 0;
+int value = 0;
+float pid_max_roll = 300;
+float loop_timer = 0;
 
 //function support
 void get_gyro();
