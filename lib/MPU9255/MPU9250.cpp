@@ -64,7 +64,7 @@ void MPU9250::initialize() {
     setClockSource(MPU9250_CLOCK_PLL_XGYRO);
     setFullScaleGyroRange(MPU9250_GYRO_FS_250);
     setFullScaleAccelRange(MPU9250_ACCEL_FS_2);
-    setDLPFMode(MPU9250_DLPF_BW_10);
+    setDLPFMode(MPU9250_DLPF_BW_5);
     setSleepEnabled(false); // thanks to Jack Elston for pointing this one out!
 }
 
@@ -328,7 +328,7 @@ uint8_t MPU9250::getFullScaleAccelRange() {
  */
 void MPU9250::setFullScaleAccelRange(uint8_t range) {
     I2Cdev::writeBits(devAddr, MPU9250_RA_ACCEL_CONFIG, MPU9250_ACONFIG_AFS_SEL_BIT, MPU9250_ACONFIG_AFS_SEL_LENGTH, range);
-    I2Cdev::writeBits(devAddr,MPU9250_RA_FF_THR,MPU9250_CFG_DLPF_CFG_BIT,MPU9250_CFG_DLPF_CFG_LENGTH,0x05);
+    I2Cdev::writeBits(devAddr,MPU9250_RA_FF_THR,MPU9250_CFG_DLPF_CFG_BIT,MPU9250_CFG_DLPF_CFG_LENGTH,0x06);
 }
 /** Get the high-pass filter configuration.
  * The DHPF is a filter module in the path leading to motion detectors (Free

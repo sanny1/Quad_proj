@@ -1,6 +1,7 @@
 // I have been using gobal declaration for most part
 
 #include <Arduino.h>
+#include <Wire.h>
 #include <Servo.h>
 #include "I2Cdev.h"
 #include "MPU9250.h"
@@ -15,30 +16,27 @@ MPU9250 accelgyro;// calling from MPU9250 to initialise
 int16_t ax,ay,az,gx,gy,gz,mx,my,mz = 0;
 
 // first for offset second and third are variable that hold gyro and accel value
-float G_cal_x, G_cal_y, G_cal_z = 0;
-float Gxyz[3] = {0,0,0};
-float Axyz[3] = {0,0,0};
+volatile float G_cal_x, G_cal_y, G_cal_z = 0;
+volatile float Gxyz[3] = {0,0,0};
+volatile float Axyz[3] = {0,0,0};
 
 // converting into euler angles
-float Roll_gyro = 0, Pitch_gyro = 0;
-float Roll_accel = 0, Pitch_accel = 0;
-float Roll_output = 0, Pitch_output = 0;
+volatile float Roll_gyro = 0, Pitch_gyro = 0;
+volatile float Roll_accel = 0, Pitch_accel = 0;
+volatile float Roll_output = 0, Pitch_output = 0;
 
 //pid calculation values
-float pid_error_temp = 0, pid_i_term_roll = 0, pid_roll_output = 0;
-float setpoint_roll = 0, last_er_tmp_roll = 0;
-float setpoint_pitch = 0, pid_i_term_pitch = 0;
-float Ki_roll = 0.0001, Kp_roll = 0.428, Kd_roll = 1.7245;
+volatile float pid_error_temp = 0, pid_i_term_roll = 0, pid_roll_output = 0;
+volatile float setpoint_roll = 0, last_er_tmp_roll = 0;
+volatile float setpoint_pitch = 0, pid_i_term_pitch = 0;
+volatile float Ki_roll = 0.00005, Kp_roll = 0.17, Kd_roll = 1.7;
+volatile float pid_pitch_output = 0, last_er_tmp_pitch = 0;
 
-float pid_pitch_output = 0, last_er_tmp_pitch = 0;
-
-float last_roll_output = 0, last_pitch_output = 0;
 //support for the calculation
-float dt = 0, last_tm = 0;
-int value = 0;
-float pid_max_roll = 300;
-float loop_timer = 0;
-float millis_took = 0;
+volatile float dt = 0, last_tm = 0;
+volatile int value = 0;
+volatile float pid_max_roll = 300;
+volatile float loop_timer = 0;
 
 //function support
 void get_gyro();
@@ -48,7 +46,7 @@ void PID_compute();
 void setup()
 {
   Wire.begin();
-  //initialise the clock speed, gyroscope, accel, motor
+  //initialise the clock speed, gyroscope, accel,
   FirstEsc.attach(5);
   SecondEsc.attach(6);
   ThirdEsc.attach(9);
@@ -61,7 +59,7 @@ void setup()
 
   accelgyro.initialize();
   //serial communication begin
-  for(int i = 0; i < 500; i++)
+  for(int i = 0; i < 2000; i++)
      {
        get_gyro();
        G_cal_x += Gxyz[0];
@@ -69,9 +67,9 @@ void setup()
        G_cal_z += Gxyz[2];
        delay(3);
      }
-  G_cal_x /= 500;
-  G_cal_y /= 500;
-  G_cal_z /= 500;
+  G_cal_x /= 2000;
+  G_cal_y /= 2000;
+  G_cal_z /= 2000;
 
   Serial.begin(9600);
 }
@@ -101,12 +99,6 @@ void loop()
   Roll_output = 0.98*(Roll_output+Roll_gyro) + 0.02*Roll_accel;
   Pitch_output = 0.98*(Pitch_output+Pitch_gyro) + 0.02*Pitch_accel;
 
-  Roll_output = (Roll_output + last_roll_output)/2;
-  Pitch_output = (Pitch_output + last_pitch_output)/2;
-
-  last_roll_output = Roll_output;
-  last_pitch_output = Pitch_output;
-
   PID_compute();
 
   PWM_motor_1 = value - ((pid_pitch_output + pid_roll_output )*11.1);
@@ -124,43 +116,48 @@ void loop()
   if(PWM_motor_3 > 1900) PWM_motor_3 = 1900;
   if(PWM_motor_4 > 1900) PWM_motor_4 = 1900;
 
-  if(Roll_output > 90 || Roll_output < -90)
+  if(Roll_output > 90)
   {
     PWM_motor_1 = 0;
     PWM_motor_2 = 0;
     PWM_motor_3 = 0;
     PWM_motor_4 = 0;
   }
-  if(Pitch_output > 90 || Pitch_output < -90)
+  if(Pitch_output > 90)
   {
     PWM_motor_1 = 0;
     PWM_motor_2 = 0;
     PWM_motor_3 = 0;
     PWM_motor_4 = 0;
   }
-
-  FirstEsc.writeMicroseconds(PWM_motor_1);
-  SecondEsc.writeMicroseconds(PWM_motor_2);
-  ThirdEsc.writeMicroseconds(PWM_motor_3);
-  FourthEsc.writeMicroseconds(PWM_motor_4);
 
   if(Serial.available())
   {
     value = Serial.parseInt();
   }
 
-  Serial.print(Roll_output);
-  Serial.print(" ");
-  Serial.print(Pitch_output);
-  Serial.print(" ");
-  Serial.print(PWM_motor_1);
-  Serial.print(" ");
-  Serial.print(PWM_motor_2);
-  Serial.print(" ");
-  Serial.print(PWM_motor_3);
-  Serial.print(" ");
-  Serial.print(PWM_motor_4);
-  Serial.println();
+  while(millis() - loop_timer < 20)
+  {
+    loop_timer = millis();
+    Serial.print("I am here");
+  }
+
+  // Serial.print(Roll_output);
+  // Serial.print(" ");
+  // Serial.print(Pitch_output);
+  // Serial.print(" ");
+  // Serial.print(pid_roll_output);
+  // Serial.print(" ");
+  // Serial.print(pid_pitch_output);
+  // Serial.print(" ");
+  // Serial.print(PWM_motor_1);
+  // Serial.print(" ");
+  // Serial.print(PWM_motor_2);
+  // Serial.print(" ");
+  // Serial.print(PWM_motor_3);
+  // Serial.print(" ");
+  // Serial.print(PWM_motor_4);
+  // Serial.println();
 
 }
 
